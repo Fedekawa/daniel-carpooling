@@ -14,129 +14,18 @@ import { Trip, Passenger } from '../types';
 const COLLECTION_NAME = 'trips';
 const LOCAL_STORAGE_KEY = 'daniel_analia_carpools_v1';
 
-// Datos de demostración iniciales amigables
-const INITIAL_DEMO_TRIPS: Trip[] = [
-  {
-    id: 'demo-1',
-    driverName: 'Carlos Mendoza',
-    driverPhone: '+573001234567',
-    direction: 'to_pereira',
-    originCity: 'Bogotá',
-    destinationCity: 'Pereira',
-    departureDate: '2026-08-20',
-    departureTime: '06:30',
-    pickupLocation: 'Portal del Norte / Pepe Sierra',
-    totalSpots: 4,
-    availableSpots: 2,
-    notes: 'Camioneta cómoda. Salimos temprano para evitar tráfico en La Línea. Espacio para 2 maletas grandes.',
-    passengers: [
-      {
-        id: 'p-1',
-        name: 'Mariana Gómez',
-        phone: '+573109876543',
-        reservedAt: new Date().toISOString()
-      },
-      {
-        id: 'p-2',
-        name: 'Felipe Torres',
-        phone: '+573205551234',
-        reservedAt: new Date().toISOString()
-      }
-    ],
-    createdAt: new Date().toISOString(),
-    driverDeviceId: 'driver-carlos'
-  },
-  {
-    id: 'demo-2',
-    driverName: 'Valentina Ríos',
-    driverPhone: '+573158889900',
-    direction: 'to_pereira',
-    originCity: 'Cali',
-    destinationCity: 'Pereira',
-    departureDate: '2026-08-20',
-    departureTime: '09:00',
-    pickupLocation: 'Chipichape / Salida Norte',
-    totalSpots: 3,
-    availableSpots: 3,
-    notes: '¡Vamos varios amigos a celebrar! Métrica de música alegre y buena energía.',
-    passengers: [],
-    createdAt: new Date().toISOString(),
-    driverDeviceId: 'driver-valentina'
-  },
-  {
-    id: 'demo-3',
-    driverName: 'Andrés Jaramillo',
-    driverPhone: '+573004445566',
-    direction: 'to_pereira',
-    originCity: 'Armenia',
-    destinationCity: 'Pereira',
-    departureDate: '2026-08-21',
-    departureTime: '11:00',
-    pickupLocation: 'Terminal de Armenia / Autopista del Café',
-    totalSpots: 3,
-    availableSpots: 1,
-    notes: 'Trayecto corto. Paso a recoger si es cerca a la vía principal.',
-    passengers: [
-      {
-        id: 'p-3',
-        name: 'Camila Morales',
-        phone: '+573123334455',
-        reservedAt: new Date().toISOString()
-      },
-      {
-        id: 'p-4',
-        name: 'Sebastián Cruz',
-        phone: '+573117778899',
-        reservedAt: new Date().toISOString()
-      }
-    ],
-    createdAt: new Date().toISOString(),
-    driverDeviceId: 'driver-andres'
-  },
-  {
-    id: 'demo-4',
-    driverName: 'Lucía Fernández',
-    driverPhone: '+573182223344',
-    direction: 'from_pereira',
-    originCity: 'Pereira',
-    destinationCity: 'Bogotá',
-    departureDate: '2026-08-23',
-    departureTime: '10:00',
-    pickupLocation: 'Hotel Movich / Zona Rosa Pereira',
-    totalSpots: 4,
-    availableSpots: 2,
-    notes: 'Viaje de regreso el domingo después del guayabo nupcial. Conducción tranquila.',
-    passengers: [
-      {
-        id: 'p-5',
-        name: 'David Silva',
-        phone: '+573019998877',
-        reservedAt: new Date().toISOString()
-      },
-      {
-        id: 'p-6',
-        name: 'Andrea Ruiz',
-        phone: '+573164443322',
-        reservedAt: new Date().toISOString()
-      }
-    ],
-    createdAt: new Date().toISOString(),
-    driverDeviceId: 'driver-lucia'
-  }
-];
-
 // Auxiliar para obtener trips desde localStorage
 function getLocalTrips(): Trip[] {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(INITIAL_DEMO_TRIPS));
-      return INITIAL_DEMO_TRIPS;
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
+      return [];
     }
     return JSON.parse(raw);
   } catch (err) {
     console.error('Error leyendo trips de localStorage', err);
-    return INITIAL_DEMO_TRIPS;
+    return [];
   }
 }
 
