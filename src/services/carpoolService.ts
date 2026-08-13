@@ -4,9 +4,8 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  doc, 
-  query, 
-  orderBy 
+  getDoc,
+  doc
 } from 'firebase/firestore';
 import { db, isRealFirebase } from '../firebase';
 import { Trip, Passenger } from '../types';
@@ -50,21 +49,23 @@ function saveLocalTrips(trips: Trip[]) {
 export function subscribeToTrips(onUpdate: (trips: Trip[]) => void): () => void {
   if (isRealFirebase) {
     try {
-      const q = query(collection(db, COLLECTION_NAME), orderBy('departureDate', 'asc'));
-      return onSnapshot(q, (snapshot) => {
+      const colRef = collection(db, COLLECTION_NAME);
+      return onSnapshot(colRef, (snapshot) => {
         const trips: Trip[] = [];
         snapshot.forEach((docSnap) => {
           if (!docSnap.id.startsWith('demo-')) {
             trips.push({ id: docSnap.id, ...docSnap.data() } as Trip);
           }
         });
+        // Ordenar por fecha de salida en cliente
+        trips.sort((a, b) => (a.departureDate + a.departureTime).localeCompare(b.departureDate + b.departureTime));
         onUpdate(trips);
       }, (error) => {
-        console.warn("Firestore listener no disponible, usando respaldo local:", error);
+        console.error("🔥 Error en Firestore Listener (posible tema de reglas de seguridad):", error);
         onUpdate(getLocalTrips());
       });
     } catch (e) {
-      console.warn("Error con Firestore, usando respaldo local:", e);
+      console.error("🔥 Error inicializando Firestore:", e);
     }
   }
 
@@ -95,9 +96,10 @@ export async function createTrip(tripData: Omit<Trip, 'id' | 'createdAt' | 'pass
   if (isRealFirebase) {
     try {
       const docRef = await addDoc(collection(db, COLLECTION_NAME), newTripPayload);
+      console.log('✅ Viaje guardado en Firestore con ID:', docRef.id);
       return docRef.id;
     } catch (err) {
-      console.warn('Error al guardar en Firestore, guardando localmente:', err);
+      console.error('🔥 ERROR GUARDANDO EN FIRESTORE:', err);
     }
   }
 
@@ -116,21 +118,25 @@ export async function reserveSpot(tripId: string, passenger: Passenger): Promise
 
   if (isRealFirebase) {
     try {
-      const tripsLocal = getLocalTrips();
-      const targetTrip = tripsLocal.find(t => t.id === tripId);
-      if (targetTrip) {
-        if (targetTrip.availableSpots <= 0) return false;
-        const updatedPassengers = [...targetTrip.passengers, passenger];
-        const updatedSpots = targetTrip.totalSpots - updatedPassengers.length;
+      const docRef = doc(db, COLLECTION_NAME, tripId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Trip;
+        const currentPassengers = data.passengers || [];
+        if (data.availableSpots <= 0) return false;
+        if (currentPassengers.some(p => p.id === passenger.id)) return false;
+
+        const updatedPassengers = [...currentPassengers, passenger];
+        const updatedSpots = Math.max(0, data.totalSpots - updatedPassengers.length);
         
-        await updateDoc(doc(db, COLLECTION_NAME, tripId), {
+        await updateDoc(docRef, {
           passengers: updatedPassengers,
           availableSpots: updatedSpots
         });
         return true;
       }
     } catch (err) {
-      console.warn('Error actualizando Firestore, aplicando en local:', err);
+      console.error('🔥 Error reservando en Firestore:', err);
     }
   }
 
@@ -138,7 +144,6 @@ export async function reserveSpot(tripId: string, passenger: Passenger): Promise
   const updated = current.map(trip => {
     if (trip.id === tripId) {
       if (trip.availableSpots <= 0) return trip;
-      // Verificar si ya está reservado
       if (trip.passengers.some(p => p.id === passenger.id)) return trip;
       
       const newPassengers = [...trip.passengers, passenger];
@@ -167,19 +172,20 @@ export async function cancelReservation(tripId: string, passengerId: string): Pr
 
   if (isRealFirebase) {
     try {
-      const tripsLocal = getLocalTrips();
-      const targetTrip = tripsLocal.find(t => t.id === tripId);
-      if (targetTrip) {
-        const newPassengers = targetTrip.passengers.filter(p => p.id !== passengerId);
-        const newAvailable = targetTrip.totalSpots - newPassengers.length;
-        await updateDoc(doc(db, COLLECTION_NAME, tripId), {
+      const docRef = doc(db, COLLECTION_NAME, tripId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Trip;
+        const newPassengers = (data.passengers || []).filter(p => p.id !== passengerId);
+        const newAvailable = Math.max(0, data.totalSpots - newPassengers.length);
+        await updateDoc(docRef, {
           passengers: newPassengers,
           availableSpots: newAvailable
         });
         return true;
       }
     } catch (err) {
-      console.warn('Error actualizando Firestore, aplicando en local:', err);
+      console.error('🔥 Error cancelando reserva en Firestore:', err);
     }
   }
 
@@ -213,7 +219,7 @@ export async function deleteTrip(tripId: string, driverDeviceId: string): Promis
       await deleteDoc(doc(db, COLLECTION_NAME, tripId));
       return true;
     } catch (err) {
-      console.warn('Error eliminando de Firestore, eliminando localmente:', err);
+      console.error('🔥 Error eliminando de Firestore:', err);
     }
   }
 
