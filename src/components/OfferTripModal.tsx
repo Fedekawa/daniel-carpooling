@@ -19,7 +19,7 @@ export const OfferTripModal: React.FC<OfferTripModalProps> = ({
   const [originCity, setOriginCity] = useState('Bogotá');
   const [destinationCity, setDestinationCity] = useState('Pereira');
   const [customOrigin, setCustomOrigin] = useState('');
-  const [departureDate, setDepartureDate] = useState('2026-08-20');
+  const [departureDate, setDepartureDate] = useState('2026-08-15');
   const [departureTime, setDepartureTime] = useState('07:00');
   const [pickupLocation, setPickupLocation] = useState('');
   const [totalSpots, setTotalSpots] = useState(3);
@@ -32,9 +32,11 @@ export const OfferTripModal: React.FC<OfferTripModalProps> = ({
     setDirection(newDir);
     if (newDir === 'to_pereira') {
       setDestinationCity('Pereira');
+      setDepartureDate('2026-08-15');
       if (originCity === 'Pereira') setOriginCity('Bogotá');
     } else {
       setOriginCity('Pereira');
+      setDepartureDate('2026-08-17');
       if (destinationCity === 'Pereira') setDestinationCity('Bogotá');
     }
   };
