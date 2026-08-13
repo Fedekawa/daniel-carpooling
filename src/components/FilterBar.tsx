@@ -52,42 +52,68 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </button>
       </div>
 
-      {/* Sub-filtros por Trayecto y Ciudad si estamos en la pestaña principal */}
+      {/* Sub-filtros por Trayecto, Disponibilidad y Ciudad si estamos en la pestaña principal */}
       {activeTab === 'all' && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-wedding-sand/80 shadow-wedding-sm">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-wedding-sand/80 shadow-wedding-sm">
           
-          {/* Toggle de Trayecto */}
-          <div className="flex items-center gap-1 bg-wedding-cream p-1 rounded-xl border border-wedding-sand/50">
-            <button
-              onClick={() => onChangeFilter({ ...filter, direction: 'all' })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                filter.direction === 'all'
-                  ? 'bg-wedding-coffee text-white shadow-sm'
-                  : 'text-wedding-coffee/70 hover:text-wedding-coffee'
-              }`}
-            >
-              Todos los Trayectos
-            </button>
-            <button
-              onClick={() => onChangeFilter({ ...filter, direction: 'to_pereira' })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-                filter.direction === 'to_pereira'
-                  ? 'bg-wedding-terracotta text-white shadow-sm'
-                  : 'text-wedding-coffee/70 hover:text-wedding-coffee'
-              }`}
-            >
-              <span>Ir a Pereira</span> ➔
-            </button>
-            <button
-              onClick={() => onChangeFilter({ ...filter, direction: 'from_pereira' })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-                filter.direction === 'from_pereira'
-                  ? 'bg-wedding-sage text-white shadow-sm'
-                  : 'text-wedding-coffee/70 hover:text-wedding-coffee'
-              }`}
-            >
-              <span>Regreso</span> 🏠
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Toggle de Trayecto */}
+            <div className="flex items-center gap-1 bg-wedding-cream p-1 rounded-xl border border-wedding-sand/50">
+              <button
+                onClick={() => onChangeFilter({ ...filter, direction: 'all' })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  filter.direction === 'all'
+                    ? 'bg-wedding-coffee text-white shadow-sm'
+                    : 'text-wedding-coffee/70 hover:text-wedding-coffee'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => onChangeFilter({ ...filter, direction: 'to_pereira' })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                  filter.direction === 'to_pereira'
+                    ? 'bg-wedding-terracotta text-white shadow-sm'
+                    : 'text-wedding-coffee/70 hover:text-wedding-coffee'
+                }`}
+              >
+                <span>Ir a Pereira</span> ➔
+              </button>
+              <button
+                onClick={() => onChangeFilter({ ...filter, direction: 'from_pereira' })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                  filter.direction === 'from_pereira'
+                    ? 'bg-wedding-sage text-white shadow-sm'
+                    : 'text-wedding-coffee/70 hover:text-wedding-coffee'
+                }`}
+              >
+                <span>Regreso</span> 🏠
+              </button>
+            </div>
+
+            {/* Toggle de Disponibilidad: Todos vs Con Cupos */}
+            <div className="flex items-center gap-1 bg-wedding-cream p-1 rounded-xl border border-wedding-sand/50">
+              <button
+                onClick={() => onChangeFilter({ ...filter, onlyWithSpots: false })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  !filter.onlyWithSpots
+                    ? 'bg-wedding-coffee text-white shadow-sm'
+                    : 'text-wedding-coffee/70 hover:text-wedding-coffee'
+                }`}
+              >
+                Todos los Carros
+              </button>
+              <button
+                onClick={() => onChangeFilter({ ...filter, onlyWithSpots: true })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                  filter.onlyWithSpots
+                    ? 'bg-emerald-700 text-white shadow-sm font-bold'
+                    : 'text-wedding-coffee/70 hover:text-wedding-coffee'
+                }`}
+              >
+                <span>Con Cupos</span> 🟢
+              </button>
+            </div>
           </div>
 
           {/* Filtro por Ciudad de Origen */}

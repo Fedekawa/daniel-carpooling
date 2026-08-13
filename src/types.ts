@@ -35,6 +35,7 @@ export interface UserProfile {
 export interface TripFilter {
   direction: 'all' | Direction;
   city: string; // 'todas' o nombre de ciudad
+  onlyWithSpots: boolean; // true = mostrar únicamente carros con cupos libres (> 0)
 }
 
 export const COUNTRY_CODES = [

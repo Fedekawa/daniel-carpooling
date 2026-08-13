@@ -32,7 +32,8 @@ export function App() {
   const [activeTab, setActiveTab] = useState<'all' | 'my_trips'>('all');
   const [filter, setFilter] = useState<TripFilter>({
     direction: 'all',
-    city: 'todas'
+    city: 'todas',
+    onlyWithSpots: false
   });
 
   // Cargar Perfil de Usuario desde LocalStorage al iniciar
@@ -175,6 +176,10 @@ export function App() {
 
     // Si estamos en la pestaña "Todos"
     if (filter.direction !== 'all' && trip.direction !== filter.direction) {
+      return false;
+    }
+
+    if (filter.onlyWithSpots && trip.availableSpots <= 0) {
       return false;
     }
 
