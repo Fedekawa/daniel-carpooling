@@ -26,9 +26,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     if (currentProfile) {
       setName(currentProfile.name);
       setCountryCode(currentProfile.countryCode || '+57');
-      // Extraer solo dígitos del teléfono
-      const cleanPhone = currentProfile.phone.replace(/[^\d]/g, '').replace(/^(57|1|34|34|373|52)/, '');
-      setPhoneNumber(cleanPhone || currentProfile.phone.replace(/[^\d]/g, ''));
+      const codeDigits = (currentProfile.countryCode || '+57').replace(/[^\d]/g, '');
+      const rawDigits = currentProfile.phone.replace(/[^\d]/g, '');
+      const cleanPhone = rawDigits.startsWith(codeDigits) ? rawDigits.slice(codeDigits.length) : rawDigits;
+      setPhoneNumber(cleanPhone);
     }
   }, [currentProfile, isOpen]);
 
