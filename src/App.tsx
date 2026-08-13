@@ -279,14 +279,19 @@ export function App() {
             Creado para conectar a nuestros familiares y amigos en el viaje a Pereira.
           </p>
           
-          <div className="pt-3 border-t border-wedding-sand/40 flex items-center justify-center gap-1.5 text-[11px] font-medium text-wedding-coffee/50">
+          <a 
+            href="https://kyto.io" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="pt-3 border-t border-wedding-sand/40 inline-flex items-center justify-center gap-1.5 text-[11px] font-medium text-wedding-coffee/50 hover:text-wedding-coffee transition-colors"
+          >
             <span>Created by</span>
             <img 
               src="/kyto-lockup-ink.svg" 
               alt="Kyto" 
               className="h-3.5 w-auto opacity-70 hover:opacity-100 transition-opacity inline-block" 
             />
-          </div>
+          </a>
         </div>
       </footer>
 
