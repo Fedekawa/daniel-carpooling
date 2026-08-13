@@ -12,17 +12,26 @@ import { db, isRealFirebase } from '../firebase';
 import { Trip, Passenger } from '../types';
 
 const COLLECTION_NAME = 'trips';
-const LOCAL_STORAGE_KEY = 'daniel_analia_carpools_v1';
+const LOCAL_STORAGE_KEY = 'daniel_analia_carpools_prod_v2';
 
-// Auxiliar para obtener trips desde localStorage
+// Auxiliar para obtener trips desde localStorage (eliminando cualquier demo previo)
 function getLocalTrips(): Trip[] {
   try {
+    // Limpiar clave antigua si existía con demos
+    localStorage.removeItem('daniel_analia_carpools_v1');
+
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
       return [];
     }
-    return JSON.parse(raw);
+    const trips: Trip[] = JSON.parse(raw);
+    // Eliminar explícitamente cualquier elemento con id demo
+    const cleanTrips = trips.filter(t => !t.id.startsWith('demo-'));
+    if (cleanTrips.length !== trips.length) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleanTrips));
+    }
+    return cleanTrips;
   } catch (err) {
     console.error('Error leyendo trips de localStorage', err);
     return [];
@@ -45,7 +54,9 @@ export function subscribeToTrips(onUpdate: (trips: Trip[]) => void): () => void 
       return onSnapshot(q, (snapshot) => {
         const trips: Trip[] = [];
         snapshot.forEach((docSnap) => {
-          trips.push({ id: docSnap.id, ...docSnap.data() } as Trip);
+          if (!docSnap.id.startsWith('demo-')) {
+            trips.push({ id: docSnap.id, ...docSnap.data() } as Trip);
+          }
         });
         onUpdate(trips);
       }, (error) => {
