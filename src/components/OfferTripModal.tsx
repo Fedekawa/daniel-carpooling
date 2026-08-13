@@ -71,7 +71,7 @@ export const OfferTripModal: React.FC<OfferTripModalProps> = ({
       pickupLocation: pickupLocation.trim(),
       totalSpots: Number(totalSpots),
       availableSpots: Number(totalSpots),
-      notes: notes.trim() || undefined,
+      notes: notes.trim() || '',
       driverDeviceId: currentUser.deviceId
     });
 

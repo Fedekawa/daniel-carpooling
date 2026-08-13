@@ -52,9 +52,18 @@ export function subscribeToTrips(onUpdate: (trips: Trip[]) => void): () => void 
 export async function createTrip(tripData: Omit<Trip, 'id' | 'createdAt' | 'passengers'>): Promise<string> {
   const newTripPayload = {
     ...tripData,
+    notes: tripData.notes || '',
+    pickupLocation: tripData.pickupLocation || '',
     passengers: [],
     createdAt: new Date().toISOString()
   };
+
+  // Limpiar cualquier propiedad que sea undefined para evitar errores de Firestore
+  Object.keys(newTripPayload).forEach((key) => {
+    if ((newTripPayload as Record<string, any>)[key] === undefined) {
+      delete (newTripPayload as Record<string, any>)[key];
+    }
+  });
 
   if (isRealFirebase) {
     try {
