@@ -114,10 +114,15 @@ export const ReserveSpotModal: React.FC<ReserveSpotModalProps> = ({
             </div>
           )}
 
-          {/* Resumen de la Reserva */}
-          <div className="p-3 bg-wedding-sand/30 rounded-2xl border border-wedding-sand flex items-center justify-between text-xs">
-            <span className="font-semibold text-wedding-coffee">Reserva a nombre de:</span>
-            <span className="font-bold text-wedding-coffee">{currentUser.name}</span>
+          {/* Resumen de la Reserva y AVISO de Confirmación con Conductor */}
+          <div className="space-y-2">
+            <div className="p-3 bg-wedding-sand/30 rounded-2xl border border-wedding-sand flex items-center justify-between text-xs">
+              <span className="font-semibold text-wedding-coffee">Reserva a nombre de:</span>
+              <span className="font-bold text-wedding-coffee">{currentUser.name}</span>
+            </div>
+            <p className="text-[11px] text-wedding-coffee/70 bg-amber-50 p-2.5 rounded-xl border border-amber-200/80 text-center font-medium">
+              Nota: Al confirmar, se abrirá WhatsApp para verificar la hora, punto de encuentro y detalles directamente con {trip.driverName}.
+            </p>
           </div>
 
           {/* Acciones */}

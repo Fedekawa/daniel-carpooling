@@ -291,7 +291,7 @@ export const TripCard: React.FC<TripCardProps> = ({
             >
               <Car className="w-4 h-4" />
               <span>
-                {trip.availableSpots > 0 ? 'Reservar mi Cupo (Gratis)' : 'Cupos Agotados'}
+                {trip.availableSpots > 0 ? 'Reservar mi Cupo' : 'Cupos Agotados'}
               </span>
             </button>
           )}

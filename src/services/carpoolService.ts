@@ -198,7 +198,7 @@ export function generateWhatsAppLink(
     ? `${spotsCount} cupos${companionNames ? ` (${companionNames})` : ''}` 
     : '1 cupo';
 
-  const message = `¡Hola ${driverName}! 🚗 Te escribo desde la app de carpooling de la Boda de Daniel y Analía. Soy ${passengerName} y acabo de reservar ${spotsText} en tu carro (${directionText}) para el ${dateFormatted} a las ${trip.departureTime}. ¡Muchas gracias por la cola/aventón! 🎉`;
+  const message = `Hola ${driverName}, te escribo desde la app de carpooling de la Boda de Daniel y Analía. Soy ${passengerName} y reservé ${spotsText} en tu carro (${directionText}) para el ${dateFormatted} a las ${trip.departureTime}. Me pongo en contacto contigo para verificar la hora, logística y punto de encuentro. Muchas gracias.`;
   
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
