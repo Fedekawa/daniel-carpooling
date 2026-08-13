@@ -11,40 +11,12 @@ import { db, isRealFirebase } from '../firebase';
 import { Trip, Passenger } from '../types';
 
 const COLLECTION_NAME = 'trips';
-const LOCAL_STORAGE_KEY = 'daniel_analia_carpools_prod_v2';
-
-// Auxiliar para obtener trips desde localStorage (eliminando cualquier demo previo)
-function getLocalTrips(): Trip[] {
-  try {
-    // Limpiar clave antigua si existía con demos
-    localStorage.removeItem('daniel_analia_carpools_v1');
-
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
-      return [];
-    }
-    const trips: Trip[] = JSON.parse(raw);
-    // Eliminar explícitamente cualquier elemento con id demo
-    const cleanTrips = trips.filter(t => !t.id.startsWith('demo-'));
-    if (cleanTrips.length !== trips.length) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleanTrips));
-    }
-    return cleanTrips;
-  } catch (err) {
-    console.error('Error leyendo trips de localStorage', err);
-    return [];
-  }
-}
-
-// Auxiliar para guardar trips en localStorage y emitir evento custom
-function saveLocalTrips(trips: Trip[]) {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(trips));
-  window.dispatchEvent(new Event('local_trips_updated'));
-}
 
 /**
  * Suscribirse a viajes en tiempo real
+ */
+/**
+ * Suscribirse a viajes en tiempo real desde Firebase Firestore
  */
 export function subscribeToTrips(onUpdate: (trips: Trip[]) => void): () => void {
   if (isRealFirebase) {
@@ -57,34 +29,25 @@ export function subscribeToTrips(onUpdate: (trips: Trip[]) => void): () => void 
             trips.push({ id: docSnap.id, ...docSnap.data() } as Trip);
           }
         });
-        // Ordenar por fecha de salida en cliente
+        // Ordenar por fecha de salida
         trips.sort((a, b) => (a.departureDate + a.departureTime).localeCompare(b.departureDate + b.departureTime));
         onUpdate(trips);
       }, (error) => {
-        console.error("🔥 Error en Firestore Listener (posible tema de reglas de seguridad):", error);
-        onUpdate(getLocalTrips());
+        console.error("🔥 Error escuchando Firestore (Revisa las Reglas de Seguridad en Firebase Console):", error);
+        onUpdate([]);
       });
     } catch (e) {
       console.error("🔥 Error inicializando Firestore:", e);
     }
   }
 
-  // Fallback LocalStorage con evento en tiempo real
-  onUpdate(getLocalTrips());
-  const handleLocalChange = () => {
-    onUpdate(getLocalTrips());
-  };
-  window.addEventListener('local_trips_updated', handleLocalChange);
-  window.addEventListener('storage', handleLocalChange);
-
-  return () => {
-    window.removeEventListener('local_trips_updated', handleLocalChange);
-    window.removeEventListener('storage', handleLocalChange);
-  };
+  // Si no hay conexión a Firebase, responder vacío
+  onUpdate([]);
+  return () => {};
 }
 
 /**
- * Crear un nuevo viaje
+ * Crear un nuevo viaje directamente en Firebase Firestore
  */
 export async function createTrip(tripData: Omit<Trip, 'id' | 'createdAt' | 'passengers'>): Promise<string> {
   const newTripPayload = {
@@ -96,26 +59,21 @@ export async function createTrip(tripData: Omit<Trip, 'id' | 'createdAt' | 'pass
   if (isRealFirebase) {
     try {
       const docRef = await addDoc(collection(db, COLLECTION_NAME), newTripPayload);
-      console.log('✅ Viaje guardado en Firestore con ID:', docRef.id);
+      console.log('✅ Viaje creado exitosamente en Firestore:', docRef.id);
       return docRef.id;
     } catch (err) {
-      console.error('🔥 ERROR GUARDANDO EN FIRESTORE:', err);
+      console.error('🔥 Error al crear viaje en Firestore:', err);
+      throw err;
     }
   }
 
-  const current = getLocalTrips();
-  const id = 'trip-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
-  const fullTrip: Trip = { id, ...newTripPayload };
-  saveLocalTrips([fullTrip, ...current]);
-  return id;
+  throw new Error('Firebase no está configurado');
 }
 
 /**
- * Reservar un cupo en un viaje
+ * Reservar un cupo en un viaje en Firebase Firestore
  */
 export async function reserveSpot(tripId: string, passenger: Passenger): Promise<boolean> {
-  let success = false;
-
   if (isRealFirebase) {
     try {
       const docRef = doc(db, COLLECTION_NAME, tripId);
@@ -133,43 +91,22 @@ export async function reserveSpot(tripId: string, passenger: Passenger): Promise
           passengers: updatedPassengers,
           availableSpots: updatedSpots
         });
+        console.log('✅ Cupo reservado en Firestore');
         return true;
       }
     } catch (err) {
-      console.error('🔥 Error reservando en Firestore:', err);
+      console.error('🔥 Error reservando cupo en Firestore:', err);
+      throw err;
     }
   }
 
-  const current = getLocalTrips();
-  const updated = current.map(trip => {
-    if (trip.id === tripId) {
-      if (trip.availableSpots <= 0) return trip;
-      if (trip.passengers.some(p => p.id === passenger.id)) return trip;
-      
-      const newPassengers = [...trip.passengers, passenger];
-      const newAvailable = Math.max(0, trip.totalSpots - newPassengers.length);
-      success = true;
-      return {
-        ...trip,
-        passengers: newPassengers,
-        availableSpots: newAvailable
-      };
-    }
-    return trip;
-  });
-
-  if (success) {
-    saveLocalTrips(updated);
-  }
-  return success;
+  return false;
 }
 
 /**
- * Cancelar la reserva de un pasajero
+ * Cancelar la reserva de un pasajero en Firebase Firestore
  */
 export async function cancelReservation(tripId: string, passengerId: string): Promise<boolean> {
-  let success = false;
-
   if (isRealFirebase) {
     try {
       const docRef = doc(db, COLLECTION_NAME, tripId);
@@ -182,51 +119,34 @@ export async function cancelReservation(tripId: string, passengerId: string): Pr
           passengers: newPassengers,
           availableSpots: newAvailable
         });
+        console.log('✅ Reserva cancelada en Firestore');
         return true;
       }
     } catch (err) {
       console.error('🔥 Error cancelando reserva en Firestore:', err);
+      throw err;
     }
   }
 
-  const current = getLocalTrips();
-  const updated = current.map(trip => {
-    if (trip.id === tripId) {
-      const newPassengers = trip.passengers.filter(p => p.id !== passengerId);
-      const newAvailable = trip.totalSpots - newPassengers.length;
-      success = true;
-      return {
-        ...trip,
-        passengers: newPassengers,
-        availableSpots: newAvailable
-      };
-    }
-    return trip;
-  });
-
-  if (success) {
-    saveLocalTrips(updated);
-  }
-  return success;
+  return false;
 }
 
 /**
- * Eliminar un viaje publicado por el conductor
+ * Eliminar un viaje en Firebase Firestore
  */
-export async function deleteTrip(tripId: string, driverDeviceId: string): Promise<boolean> {
+export async function deleteTrip(tripId: string, _driverDeviceId: string): Promise<boolean> {
   if (isRealFirebase) {
     try {
       await deleteDoc(doc(db, COLLECTION_NAME, tripId));
+      console.log('✅ Viaje eliminado de Firestore');
       return true;
     } catch (err) {
-      console.error('🔥 Error eliminando de Firestore:', err);
+      console.error('🔥 Error eliminando viaje de Firestore:', err);
+      throw err;
     }
   }
 
-  const current = getLocalTrips();
-  const filtered = current.filter(t => t.id !== tripId || (driverDeviceId && t.driverDeviceId === driverDeviceId));
-  saveLocalTrips(filtered);
-  return true;
+  return false;
 }
 
 /**
