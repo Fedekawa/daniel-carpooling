@@ -27,8 +27,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setName(currentProfile.name);
       setCountryCode(currentProfile.countryCode || '+57');
       // Extraer solo dígitos del teléfono
-      const cleanPhone = currentProfile.phone.replace(currentProfile.countryCode || '+57', '').trim();
-      setPhoneNumber(cleanPhone);
+      const cleanPhone = currentProfile.phone.replace(/[^\d]/g, '').replace(/^(57|1|34|34|373|52)/, '');
+      setPhoneNumber(cleanPhone || currentProfile.phone.replace(/[^\d]/g, ''));
     }
   }, [currentProfile, isOpen]);
 
@@ -41,13 +41,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       return;
     }
     const cleanDigits = phoneNumber.replace(/[^\d]/g, '');
-    if (!cleanDigits || cleanDigits.length < 7) {
-      setError('Por favor ingresa un número de teléfono celular válido');
+    if (!cleanDigits || cleanDigits.length < 6) {
+      setError('Por favor ingresa un número de teléfono celular válido (solo números)');
       return;
     }
 
-    const fullPhone = `${countryCode}${cleanDigits}`;
-    const deviceId = currentProfile?.deviceId || 'dev-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+    const cleanCode = countryCode.replace(/[^\d+]/g, '');
+    const fullPhone = `${cleanCode}${cleanDigits}`;
+    // El número de teléfono limpio con código de país es la identidad única del usuario
+    const deviceId = fullPhone;
 
     onSave({
       deviceId,
@@ -141,8 +143,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <input
                   type="tel"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="300 123 4567"
+                  onChange={(e) => setPhoneNumber(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="3001234567"
                   className="w-full pl-9 pr-3 py-3 rounded-xl border border-wedding-sand bg-wedding-cream/40 focus:bg-white focus:border-wedding-terracotta focus:ring-2 focus:ring-wedding-terracotta/20 text-sm font-medium text-wedding-coffee outline-none transition-all"
                   required
                 />

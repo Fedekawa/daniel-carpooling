@@ -161,8 +161,15 @@ export function App() {
     // Si estamos en la pestaña "Mis Viajes"
     if (activeTab === 'my_trips') {
       if (!userProfile) return false;
-      const isMyCar = trip.driverDeviceId === userProfile.deviceId;
-      const isMyReservation = trip.passengers.some(p => p.id === userProfile.deviceId);
+      const cleanUserPhone = userProfile.phone.replace(/[^\d+]/g, '');
+      const isMyCar = 
+        trip.driverDeviceId === userProfile.deviceId ||
+        (cleanUserPhone && trip.driverPhone.replace(/[^\d+]/g, '') === cleanUserPhone);
+
+      const isMyReservation = trip.passengers.some(p => 
+        p.id === userProfile.deviceId || 
+        (cleanUserPhone && p.phone.replace(/[^\d+]/g, '') === cleanUserPhone)
+      );
       return isMyCar || isMyReservation;
     }
 

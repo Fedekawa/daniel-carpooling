@@ -30,12 +30,23 @@ export const TripCard: React.FC<TripCardProps> = ({
   onCancelReservation,
   onDeleteTrip
 }) => {
-  // Comprobar si el usuario actual es el conductor
-  const isDriver = currentUser && currentUser.deviceId === trip.driverDeviceId;
+  // Normalizar teléfono del usuario actual para comparaciones exactas
+  const cleanUserPhone = currentUser ? currentUser.phone.replace(/[^\d+]/g, '') : '';
+
+  // Comprobar si el usuario actual es el conductor (por deviceId o por número de teléfono)
+  const isDriver = Boolean(
+    currentUser && (
+      currentUser.deviceId === trip.driverDeviceId ||
+      (cleanUserPhone && trip.driverPhone.replace(/[^\d+]/g, '') === cleanUserPhone)
+    )
+  );
 
   // Comprobar si el usuario actual ya reservó un cupo en este carro
   const userPassenger = currentUser 
-    ? trip.passengers.find(p => p.id === currentUser.deviceId)
+    ? trip.passengers.find(p => 
+        p.id === currentUser.deviceId || 
+        (cleanUserPhone && p.phone.replace(/[^\d+]/g, '') === cleanUserPhone)
+      )
     : null;
   const isReservedByMe = Boolean(userPassenger);
 
