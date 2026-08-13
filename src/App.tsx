@@ -5,6 +5,7 @@ import { FilterBar } from './components/FilterBar';
 import { StatsBanner } from './components/StatsBanner';
 import { TripCard } from './components/TripCard';
 import { OfferTripModal } from './components/OfferTripModal';
+import { ReserveSpotModal } from './components/ReserveSpotModal';
 import { Toast, ToastMessage } from './components/Toast';
 import { Trip, UserProfile, TripFilter } from './types';
 import { 
@@ -76,46 +77,71 @@ export function App() {
     });
   };
 
-  // Reservar un cupo en un carro
-  const handleReserveSpot = async (trip: Trip) => {
+  const [selectedTripToReserve, setSelectedTripToReserve] = useState<Trip | null>(null);
+  const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
+  const [isReservingSpot, setIsReservingSpot] = useState(false);
+
+  // Abrir modal de selección de cupos
+  const handleReserveSpot = (trip: Trip) => {
     if (!userProfile) {
       setIsProfileModalOpen(true);
       return;
     }
+    setSelectedTripToReserve(trip);
+    setIsReserveModalOpen(true);
+  };
 
+  // Confirmar reserva con número de cupos
+  const handleConfirmReserveSpot = async (spotsCount: number, companionNames: string) => {
+    if (!selectedTripToReserve || !userProfile) return;
+
+    setIsReservingSpot(true);
     const passenger = {
       id: userProfile.deviceId,
       name: userProfile.name,
       phone: userProfile.phone,
-      reservedAt: new Date().toISOString()
+      reservedAt: new Date().toISOString(),
+      spotsCount,
+      companionNames
     };
 
-    const success = await reserveSpot(trip.id, passenger);
+    try {
+      const success = await reserveSpot(selectedTripToReserve.id, passenger);
 
-    if (success) {
-      // Generar enlace WhatsApp y abrir inmediatamente
-      const waUrl = generateWhatsAppLink(
-        trip.driverPhone, 
-        trip.driverName, 
-        userProfile.name, 
-        trip
-      );
-      
-      window.open(waUrl, '_blank');
+      if (success) {
+        // Generar enlace WhatsApp
+        const waUrl = generateWhatsAppLink(
+          selectedTripToReserve.driverPhone, 
+          selectedTripToReserve.driverName, 
+          userProfile.name, 
+          selectedTripToReserve,
+          spotsCount,
+          companionNames
+        );
+        
+        window.open(waUrl, '_blank');
 
-      setToast({
-        id: Date.now().toString(),
-        type: 'success',
-        title: '¡Cupo Reservado con Éxito! 🎉',
-        message: `Te hemos redirigido a WhatsApp para confirmar con ${trip.driverName}.`
-      });
-    } else {
-      setToast({
-        id: Date.now().toString(),
-        type: 'error',
-        title: 'No se pudo reservar',
-        message: 'Parece que los cupos se agotaron o ya tenías una reserva.'
-      });
+        setToast({
+          id: Date.now().toString(),
+          type: 'success',
+          title: `¡${spotsCount} ${spotsCount === 1 ? 'Cupo Reservado' : 'Cupos Reservados'}! 🎉`,
+          message: `Te hemos redirigido a WhatsApp para confirmar con ${selectedTripToReserve.driverName}.`
+        });
+
+        setIsReserveModalOpen(false);
+        setSelectedTripToReserve(null);
+      } else {
+        setToast({
+          id: Date.now().toString(),
+          type: 'error',
+          title: 'No se pudo reservar',
+          message: 'Parece que los cupos se agotaron o ya tenías una reserva.'
+        });
+      }
+    } catch (err) {
+      console.error('Error al reservar:', err);
+    } finally {
+      setIsReservingSpot(false);
     }
   };
 
@@ -329,6 +355,18 @@ export function App() {
         onClose={() => setIsOfferModalOpen(false)}
         onSubmit={handleCreateTrip}
         currentUser={userProfile}
+      />
+
+      <ReserveSpotModal
+        isOpen={isReserveModalOpen}
+        onClose={() => {
+          setIsReserveModalOpen(false);
+          setSelectedTripToReserve(null);
+        }}
+        trip={selectedTripToReserve}
+        currentUser={userProfile}
+        onConfirm={handleConfirmReserveSpot}
+        isSubmitting={isReservingSpot}
       />
 
       <Toast toast={toast} onClose={() => setToast(null)} />

@@ -5,6 +5,8 @@ export interface Passenger {
   name: string;
   phone: string;       // Formato E.164 o internacional con código de país
   reservedAt: string;  // Cadena ISO
+  spotsCount?: number; // Número de cupos reservados (por defecto 1)
+  companionNames?: string; // Opcional: "Esposa e hijo", "Ana y Carlos"
 }
 
 export interface Trip {

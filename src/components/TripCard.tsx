@@ -185,7 +185,9 @@ export const TripCard: React.FC<TripCardProps> = ({
           <div className="flex items-center justify-between text-xs font-semibold text-wedding-coffee/70 mb-2">
             <span className="flex items-center gap-1">
               <Users className="w-3.5 h-3.5 text-wedding-terracotta" />
-              <span>Pasajeros ({trip.passengers.length} de {trip.totalSpots})</span>
+              <span>
+                Pasajeros ({trip.passengers.reduce((sum, p) => sum + (p.spotsCount || 1), 0)} de {trip.totalSpots} cupos)
+              </span>
             </span>
           </div>
 
@@ -195,19 +197,28 @@ export const TripCard: React.FC<TripCardProps> = ({
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {trip.passengers.map((p) => (
-                <span
-                  key={p.id}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border ${
-                    currentUser && p.id === currentUser.deviceId
-                      ? 'bg-wedding-terracotta-light text-wedding-terracotta border-wedding-terracotta/30 font-bold'
-                      : 'bg-wedding-cream text-wedding-coffee border-wedding-sand'
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-wedding-terracotta inline-block"></span>
-                  {p.name}
-                </span>
-              ))}
+              {trip.passengers.map((p) => {
+                const isMe = currentUser && (p.id === currentUser.deviceId || (cleanUser && p.phone.replace(/[^\d]/g, '').endsWith(cleanUser.slice(-8))));
+                const spots = p.spotsCount || 1;
+                return (
+                  <span
+                    key={p.id}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border ${
+                      isMe
+                        ? 'bg-wedding-terracotta-light text-wedding-terracotta border-wedding-terracotta/30 font-bold'
+                        : 'bg-wedding-cream text-wedding-coffee border-wedding-sand'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-wedding-terracotta inline-block"></span>
+                    <span>{p.name}</span>
+                    {spots > 1 && (
+                      <span className="text-[10px] bg-wedding-terracotta/15 px-1.5 py-0.5 rounded-md font-bold">
+                        {spots} cupos {p.companionNames ? `(${p.companionNames})` : ''}
+                      </span>
+                    )}
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>
@@ -227,7 +238,14 @@ export const TripCard: React.FC<TripCardProps> = ({
           {isReservedByMe ? (
             <div className="w-full flex flex-col sm:flex-row gap-2">
               <a
-                href={whatsappUrl}
+                href={generateWhatsAppLink(
+                  trip.driverPhone,
+                  trip.driverName,
+                  currentUser?.name || 'Invitado',
+                  trip,
+                  userPassenger?.spotsCount || 1,
+                  userPassenger?.companionNames
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 py-3 px-4 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-green-600/20 flex items-center justify-center gap-2 transition-all"
@@ -237,11 +255,13 @@ export const TripCard: React.FC<TripCardProps> = ({
               </a>
 
               <button
-                onClick={() => onCancelReservation(trip.id, currentUser!.deviceId)}
+                onClick={() => onCancelReservation(trip.id, userPassenger?.id || currentUser!.deviceId)}
                 className="py-3 px-4 rounded-2xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
               >
                 <XCircle className="w-4 h-4" />
-                <span>Cancelar mi Cupo</span>
+                <span>
+                  Cancelar mi Reserva ({(userPassenger?.spotsCount || 1)} {(userPassenger?.spotsCount || 1) === 1 ? 'cupo' : 'cupos'})
+                </span>
               </button>
             </div>
           ) : isDriver ? (

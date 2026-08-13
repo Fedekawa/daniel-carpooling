@@ -80,7 +80,7 @@ export async function createTrip(tripData: Omit<Trip, 'id' | 'createdAt' | 'pass
 }
 
 /**
- * Reservar un cupo en un viaje en Firebase Firestore
+ * Reservar cupos en un viaje en Firebase Firestore
  */
 export async function reserveSpot(tripId: string, passenger: Passenger): Promise<boolean> {
   if (isRealFirebase) {
@@ -90,17 +90,30 @@ export async function reserveSpot(tripId: string, passenger: Passenger): Promise
       if (docSnap.exists()) {
         const data = docSnap.data() as Trip;
         const currentPassengers = data.passengers || [];
-        if (data.availableSpots <= 0) return false;
+        const requestedSpots = passenger.spotsCount || 1;
+
+        if (data.availableSpots < requestedSpots) return false;
         if (currentPassengers.some(p => p.id === passenger.id)) return false;
 
-        const updatedPassengers = [...currentPassengers, passenger];
-        const updatedSpots = Math.max(0, data.totalSpots - updatedPassengers.length);
+        // Limpiar undefined antes de guardar en Firestore
+        const cleanPassenger: Passenger = {
+          id: passenger.id,
+          name: passenger.name,
+          phone: passenger.phone,
+          reservedAt: passenger.reservedAt,
+          spotsCount: requestedSpots,
+          companionNames: passenger.companionNames ? passenger.companionNames.trim() : ''
+        };
+
+        const updatedPassengers = [...currentPassengers, cleanPassenger];
+        const totalReservedSpots = updatedPassengers.reduce((sum, p) => sum + (p.spotsCount || 1), 0);
+        const updatedSpots = Math.max(0, data.totalSpots - totalReservedSpots);
         
         await updateDoc(docRef, {
           passengers: updatedPassengers,
           availableSpots: updatedSpots
         });
-        console.log('✅ Cupo reservado en Firestore');
+        console.log('✅ Cupo(s) reservado(s) en Firestore');
         return true;
       }
     } catch (err) {
@@ -123,7 +136,9 @@ export async function cancelReservation(tripId: string, passengerId: string): Pr
       if (docSnap.exists()) {
         const data = docSnap.data() as Trip;
         const newPassengers = (data.passengers || []).filter(p => p.id !== passengerId);
-        const newAvailable = Math.max(0, data.totalSpots - newPassengers.length);
+        const totalReservedSpots = newPassengers.reduce((sum, p) => sum + (p.spotsCount || 1), 0);
+        const newAvailable = Math.max(0, data.totalSpots - totalReservedSpots);
+
         await updateDoc(docRef, {
           passengers: newPassengers,
           availableSpots: newAvailable
@@ -165,7 +180,9 @@ export function generateWhatsAppLink(
   driverPhone: string, 
   driverName: string, 
   passengerName: string,
-  trip: Trip
+  trip: Trip,
+  spotsCount: number = 1,
+  companionNames?: string
 ): string {
   // Limpiar caracteres del número telefónico
   const cleanPhone = driverPhone.replace(/[^\d+]/g, '').replace('+', '');
@@ -177,7 +194,11 @@ export function generateWhatsAppLink(
   const dateFormatted = new Date(trip.departureDate + 'T' + trip.departureTime)
     .toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
 
-  const message = `¡Hola ${driverName}! 🚗 Te escribo desde la app de carpooling de la Boda de Daniel y Analía. Soy ${passengerName} y acabo de reservar un cupo en tu carro (${directionText}) para el ${dateFormatted} a las ${trip.departureTime}. ¡Muchas gracias por la cola/aventón! 🎉`;
+  const spotsText = spotsCount > 1 
+    ? `${spotsCount} cupos${companionNames ? ` (${companionNames})` : ''}` 
+    : '1 cupo';
 
+  const message = `¡Hola ${driverName}! 🚗 Te escribo desde la app de carpooling de la Boda de Daniel y Analía. Soy ${passengerName} y acabo de reservar ${spotsText} en tu carro (${directionText}) para el ${dateFormatted} a las ${trip.departureTime}. ¡Muchas gracias por la cola/aventón! 🎉`;
+  
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
