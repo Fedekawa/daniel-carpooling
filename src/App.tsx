@@ -157,21 +157,31 @@ export function App() {
     }
   };
 
+  // Auxiliar para verificar si un viaje le pertenece al usuario (como conductor o pasajero)
+  const isMyTrip = (trip: Trip) => {
+    if (!userProfile) return false;
+    const cleanUser = userProfile.phone.replace(/[^\d]/g, '');
+    if (!cleanUser) return trip.driverDeviceId === userProfile.deviceId;
+
+    const driverPhoneClean = trip.driverPhone.replace(/[^\d]/g, '');
+    const isDriver = 
+      trip.driverDeviceId === userProfile.deviceId ||
+      (driverPhoneClean && (driverPhoneClean === cleanUser || (cleanUser.length >= 8 && driverPhoneClean.endsWith(cleanUser.slice(-8)))));
+
+    const isPassenger = trip.passengers.some(p => {
+      const passengerPhoneClean = p.phone.replace(/[^\d]/g, '');
+      return p.id === userProfile.deviceId || 
+        (passengerPhoneClean && (passengerPhoneClean === cleanUser || (cleanUser.length >= 8 && passengerPhoneClean.endsWith(cleanUser.slice(-8)))));
+    });
+
+    return isDriver || isPassenger;
+  };
+
   // Filtrado de Viajes
   const filteredTrips = trips.filter((trip) => {
     // Si estamos en la pestaña "Mis Viajes"
     if (activeTab === 'my_trips') {
-      if (!userProfile) return false;
-      const cleanUserPhone = userProfile.phone.replace(/[^\d+]/g, '');
-      const isMyCar = 
-        trip.driverDeviceId === userProfile.deviceId ||
-        (cleanUserPhone && trip.driverPhone.replace(/[^\d+]/g, '') === cleanUserPhone);
-
-      const isMyReservation = trip.passengers.some(p => 
-        p.id === userProfile.deviceId || 
-        (cleanUserPhone && p.phone.replace(/[^\d+]/g, '') === cleanUserPhone)
-      );
-      return isMyCar || isMyReservation;
+      return isMyTrip(trip);
     }
 
     // Si estamos en la pestaña "Todos"
@@ -194,9 +204,7 @@ export function App() {
   });
 
   // Contador de "Mis Viajes"
-  const myTripsCount = userProfile ? trips.filter(t => 
-    t.driverDeviceId === userProfile.deviceId || t.passengers.some(p => p.id === userProfile.deviceId)
-  ).length : 0;
+  const myTripsCount = userProfile ? trips.filter(isMyTrip).length : 0;
 
   return (
     <div className="min-h-screen bg-wedding-cream flex flex-col font-sans">
