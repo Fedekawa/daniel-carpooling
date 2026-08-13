@@ -269,7 +269,7 @@ export function App() {
 
       {/* Pie de Página Nupcial */}
       <footer className="mt-12 py-8 bg-white border-t border-wedding-sand text-center text-xs text-wedding-coffee/70">
-        <div className="max-w-md mx-auto px-4 space-y-2">
+        <div className="max-w-md mx-auto px-4 space-y-3">
           <div className="flex items-center justify-center gap-1.5 font-serif font-bold text-sm text-wedding-coffee">
             <span>Daniel & Analía</span>
             <Heart className="w-3.5 h-3.5 text-wedding-terracotta fill-wedding-terracotta" />
@@ -278,6 +278,15 @@ export function App() {
           <p className="text-[11px] text-wedding-coffee/60">
             Creado para conectar a nuestros familiares y amigos en el viaje a Pereira.
           </p>
+          
+          <div className="pt-3 border-t border-wedding-sand/40 flex items-center justify-center gap-1.5 text-[11px] font-medium text-wedding-coffee/50">
+            <span>Created by</span>
+            <img 
+              src="/kyto-lockup-ink.svg" 
+              alt="Kyto" 
+              className="h-3.5 w-auto opacity-70 hover:opacity-100 transition-opacity inline-block" 
+            />
+          </div>
         </div>
       </footer>
 
